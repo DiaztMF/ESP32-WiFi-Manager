@@ -1,53 +1,56 @@
 # ESP32 WiFi Manager
 
-Ganti SSID dan password WiFi ESP32 lewat HP tanpa perlu re-flash dari Arduino IDE.
+Single-header library untuk ganti SSID dan password WiFi ESP32 lewat HP via captive portal. Tanpa re-flash, tanpa aplikasi tambahan.
 
-## Cara Kerja
+## Cara Pakai
 
-ESP32 punya dua mode:
+Copy `ESPWiFiManager.h` ke folder sketch kamu:
 
-- **AP Mode** — ESP32 jadi hotspot `ESP32-Config`. HP connect ke WiFi ini, otomatis muncul notifikasi "Sign in to WiFi". Buka halaman config, pilih jaringan, isi password, submit.
-- **STA Mode** — ESP32 connect ke WiFi yang udah disimpan. LED biru nyala tanda berhasil.
+```cpp
+#include "ESPWiFiManager.h"
 
-Kalau mau ganti WiFi, tekan tombol BOOT (GPIO0) selama 3 detik — config terhapus, ESP32 restart ke AP mode.
+ESPWiFiManager wifi;
+
+void setup() {
+    Serial.begin(115200);
+    wifi.begin();           // auto connect, fallback ke AP mode
+}
+
+void loop() {
+    wifi.loop();            // wajib untuk captive portal
+    // kode kamu di sini
+}
+```
+
+Upload → HP connect ke `ESP32-Config` → notifikasi "Sign in to WiFi" muncul → isi SSID/password.
+
+## API
+
+| Method | Fungsi |
+|--------|--------|
+| `begin(apSSID, apPassword)` | Mulai — auto connect atau jadi hotspot |
+| `loop()` | Wajib dipanggil di loop() untuk captive portal |
+| `isConnected()` | `true` kalau udah connect ke WiFi |
+| `getIP()` | IP address saat ini |
+| `resetConfig()` | Hapus config WiFi dan restart |
+
+## Cara Ganti WiFi
+
+Tekan **GPIO0 (BOOT)** selama 3 detik → config terhapus → ESP32 restart ke AP mode → ulang proses dari HP.
 
 ## File Structure
 
 ```
-17-07-2026-WiFi-Manager/
-├── 17-07-2026-WiFi-Manager.ino   # State machine: setup/loop
-├── config.h                        # Konstanta (SSID AP, pin, timeout)
-├── storage.h                       # Baca/tulis config ke NVS
-├── portal.h                        # Web server + DNS spoofing + HTML
-├── DESIGN.md                       # Dokumen desain
-├── PLAN.md                         # Rencana implementasi
-└── README.md
+ESPWiFiManager.h          # Library — satu file, include aja
+examples/
+├── basic/basic.ino       # Minimal usage
+└── sensor-dht/sensor-dht.ino  # Contoh dengan DHT11
 ```
 
 ## Tech Stack
 
-- **ESP32 Arduino Core** — WiFi, WebServer, Preferences, DNSServer
-- Semua library **built-in** — tanpa install tambahan
+ESP32 Arduino Core — semua library built-in (`WiFi.h`, `WebServer.h`, `DNSServer.h`, `Preferences.h`).
 
-## Cara Upload
+## Lisensi
 
-1. Buka `17-07-2026-WiFi-Manager.ino` di Arduino IDE
-2. **Tools → Board → ESP32 Dev Module**
-3. **Tools → Port →** pilih port ESP32
-4. Klik **Upload**
-5. Buka **Serial Monitor** (115200 baud) untuk lihat log
-
-## Test
-
-| Langkah | Hasil |
-|---------|-------|
-| HP cari WiFi → `ESP32-Config` | Muncul tanpa password |
-| Connect ke `ESP32-Config` | Notifikasi "Sign in to WiFi" muncul otomatis |
-| Buka halaman config | Form dengan daftar SSID hasil scan |
-| Pilih WiFi, isi password, submit | ESP32 restart |
-| Cek Serial Monitor | IP address muncul, LED nyala |
-| Tekan BOOT 3 detik | Config terhapus, balik AP mode |
-
-## License
-
-MIT
+MIT — bebas dipake, diubah, dan disebarin.

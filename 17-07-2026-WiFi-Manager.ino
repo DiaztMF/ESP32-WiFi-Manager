@@ -1,100 +1,37 @@
-#include "config.h"
-#include "storage.h"
-#include "portal.h"
+/*
+ * ESP32 WiFi Manager — Demo
+ * 
+ * Cara pakai:
+ *   1. Upload sketch ini ke ESP32
+ *   2. Buka WiFi HP, connect ke "ESP32-Config"
+ *   3. Notifikasi "Sign in to WiFi" muncul — tap
+ *   4. Pilih WiFi rumah, isi password, submit
+ *   5. ESP32 restart dan connect ke WiFi
+ * 
+ * Ganti WiFi lain: tekan BOOT 3 detik
+ */
 
-enum Mode { MODE_AP, MODE_STA };
-Mode currentMode = MODE_AP;
+#include "ESPWiFiManager.h"
 
-char savedSSID[64] = "";
-char savedPass[64] = "";
-unsigned long apStartTime = 0;
-bool apTimedOut = false;
-
-void onConfigSaved(const char* ssid, const char* pass) {
-    saveConfig(ssid, pass);
-}
-
-bool connectToWiFi() {
-    WiFi.mode(WIFI_STA);
-    WiFi.begin(savedSSID, savedPass);
-
-    int attempts = 0;
-    while (WiFi.status() != WL_CONNECTED && attempts < 40) {
-        delay(500);
-        digitalWrite(LED_PIN, !digitalRead(LED_PIN));
-        attempts++;
-    }
-    digitalWrite(LED_PIN, LOW);
-
-    return WiFi.status() == WL_CONNECTED;
-}
-
-void startAPMode() {
-    currentMode = MODE_AP;
-    WiFi.mode(WIFI_AP);
-    WiFi.softAP(AP_SSID, AP_PASSWORD);
-
-    IPAddress ip = WiFi.softAPIP();
-
-    Serial.println("AP mode aktif");
-    Serial.print("SSID: ");
-    Serial.println(AP_SSID);
-    Serial.print("IP: ");
-    Serial.println(ip);
-
-    startWebServer(onConfigSaved);
-    apStartTime = millis();
-    apTimedOut = false;
-}
+ESPWiFiManager wifi;
 
 void setup() {
-    Serial.begin(BAUD_RATE);
-    pinMode(LED_PIN, OUTPUT);
-    pinMode(BUTTON_PIN, INPUT_PULLUP);
-    digitalWrite(LED_PIN, LOW);
+    Serial.begin(115200);
+    pinMode(2, OUTPUT);
+    digitalWrite(2, LOW);
 
-    delay(500);
-    Serial.println();
-    Serial.println("ESP32 WiFi Manager starting...");
+    wifi.begin("ESP32-Config", "");
 
-    loadConfig(savedSSID, savedPass, sizeof(savedSSID));
-
-    if (strlen(savedSSID) > 0) {
-        Serial.print("Mencoba connect ke: ");
-        Serial.println(savedSSID);
-        if (connectToWiFi()) {
-            currentMode = MODE_STA;
-            Serial.println("Berhasil connect!");
-            Serial.print("IP: ");
-            Serial.println(WiFi.localIP());
-            digitalWrite(LED_PIN, HIGH);
-        } else {
-            Serial.println("Gagal connect, masuk AP mode");
-            startAPMode();
-        }
-    } else {
-        Serial.println("Tidak ada config tersimpan, masuk AP mode");
-        startAPMode();
-    }
+    Serial.print("Status: ");
+    Serial.println(wifi.isConnected() ? "Connected" : "AP Mode");
+    Serial.print("IP: ");
+    Serial.println(wifi.getIP());
 }
 
 void loop() {
-    if (digitalRead(BUTTON_PIN) == LOW) {
-        delay(3000);
-        if (digitalRead(BUTTON_PIN) == LOW) {
-            Serial.println("Tombol reset ditekan 3 detik — menghapus config");
-            clearConfig();
-            ESP.restart();
-        }
-    }
+    wifi.loop();
 
-    if (currentMode == MODE_AP) {
-        handleClient();
-
-        if (!apTimedOut && (millis() - apStartTime > AP_TIMEOUT_MS)) {
-            Serial.println("AP timeout — restart");
-            apTimedOut = true;
-            ESP.restart();
-        }
+    if (wifi.isConnected()) {
+        digitalWrite(2, HIGH);
     }
 }
