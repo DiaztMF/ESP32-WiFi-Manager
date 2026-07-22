@@ -2,12 +2,22 @@
 
 Single-header library for changing ESP32 WiFi SSID and password from a phone via captive portal. No re-flash, no extra apps.
 
+## Installation
+
+### Arduino IDE (ZIP)
+
+1. Download the [latest release](https://github.com/DiaztMF/ESP32-WiFi-Manager/releases) ZIP
+2. Arduino IDE → `Sketch → Include Library → Add .ZIP Library...`
+3. Select the downloaded ZIP
+
+### Manual (copy file)
+
+Copy `src/ESPWiFiManager.h` into your sketch folder.
+
 ## Usage
 
-Copy `ESPWiFiManager.h` into your sketch folder:
-
 ```cpp
-#include "ESPWiFiManager.h"
+#include <ESPWiFiManager.h>
 
 ESPWiFiManager wifi;
 
@@ -41,10 +51,15 @@ Hold **GPIO0 (BOOT)** for 3 seconds → config cleared → ESP32 restarts to AP 
 ## File Structure
 
 ```
-ESPWiFiManager.h          # Library — single file, just include it
-examples/
-├── basic/basic.ino       # Minimal usage
-└── sensor-dht/sensor-dht.ino  # DHT11 integration example
+ESP32-WiFi-Manager/
+├── library.properties      # Arduino library metadata
+├── src/
+│   └── ESPWiFiManager.h    # Library — single header
+├── examples/
+│   ├── basic/basic.ino     # Minimal usage
+│   └── sensor-dht/sensor-dht.ino  # DHT11 integration
+├── keywords.txt            # Arduino IDE syntax highlighting
+└── README.md
 ```
 
 ## Tech Stack

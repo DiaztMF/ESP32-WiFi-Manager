@@ -1,0 +1,6 @@
+ESPWiFiManager	KEYWORD1
+begin	KEYWORD2
+loop	KEYWORD2
+isConnected	KEYWORD2
+getIP	KEYWORD2
+resetConfig	KEYWORD2
