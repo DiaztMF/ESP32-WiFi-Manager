@@ -1,10 +1,10 @@
 # ESP32 WiFi Manager
 
-Single-header library untuk ganti SSID dan password WiFi ESP32 lewat HP via captive portal. Tanpa re-flash, tanpa aplikasi tambahan.
+Single-header library for changing ESP32 WiFi SSID and password from a phone via captive portal. No re-flash, no extra apps.
 
-## Cara Pakai
+## Usage
 
-Copy `ESPWiFiManager.h` ke folder sketch kamu:
+Copy `ESPWiFiManager.h` into your sketch folder:
 
 ```cpp
 #include "ESPWiFiManager.h"
@@ -13,44 +13,44 @@ ESPWiFiManager wifi;
 
 void setup() {
     Serial.begin(115200);
-    wifi.begin();           // auto connect, fallback ke AP mode
+    wifi.begin();           // auto connect, fallback to AP mode
 }
 
 void loop() {
-    wifi.loop();            // wajib untuk captive portal
-    // kode kamu di sini
+    wifi.loop();            // required for captive portal
+    // your code here
 }
 ```
 
-Upload → HP connect ke `ESP32-Config` → notifikasi "Sign in to WiFi" muncul → isi SSID/password.
+Upload → phone connects to `ESP32-Config` → "Sign in to WiFi" notification appears → enter SSID/password.
 
 ## API
 
-| Method | Fungsi |
-|--------|--------|
-| `begin(apSSID, apPassword)` | Mulai — auto connect atau jadi hotspot |
-| `loop()` | Wajib dipanggil di loop() untuk captive portal |
-| `isConnected()` | `true` kalau udah connect ke WiFi |
-| `getIP()` | IP address saat ini |
-| `resetConfig()` | Hapus config WiFi dan restart |
+| Method | Description |
+|--------|-------------|
+| `begin(apSSID, apPassword)` | Start — auto connect or become a hotspot |
+| `loop()` | Must be called in loop() for captive portal |
+| `isConnected()` | `true` when connected to WiFi |
+| `getIP()` | Current IP address |
+| `resetConfig()` | Erase WiFi config and restart |
 
-## Cara Ganti WiFi
+## Changing WiFi
 
-Tekan **GPIO0 (BOOT)** selama 3 detik → config terhapus → ESP32 restart ke AP mode → ulang proses dari HP.
+Hold **GPIO0 (BOOT)** for 3 seconds → config cleared → ESP32 restarts to AP mode → repeat setup from phone.
 
 ## File Structure
 
 ```
-ESPWiFiManager.h          # Library — satu file, include aja
+ESPWiFiManager.h          # Library — single file, just include it
 examples/
 ├── basic/basic.ino       # Minimal usage
-└── sensor-dht/sensor-dht.ino  # Contoh dengan DHT11
+└── sensor-dht/sensor-dht.ino  # DHT11 integration example
 ```
 
 ## Tech Stack
 
-ESP32 Arduino Core — semua library built-in (`WiFi.h`, `WebServer.h`, `DNSServer.h`, `Preferences.h`).
+ESP32 Arduino Core — all built-in libraries (`WiFi.h`, `WebServer.h`, `DNSServer.h`, `Preferences.h`).
 
-## Lisensi
+## License
 
-MIT — bebas dipake, diubah, dan disebarin.
+MIT — free to use, modify, and distribute.

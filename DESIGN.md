@@ -1,104 +1,78 @@
-# ESP32 WiFi Manager — Captive Portal
+# ESP32 WiFi Manager — Design
 
-Ganti SSID & password WiFi ESP32 lewat HP tanpa re-flash Arduino IDE.
+Change ESP32 WiFi SSID & password from a phone without re-flashing via Arduino IDE.
 
-## Mode Operasi
+## Operation Modes
 
-| Mode | Kondisi | Fungsi |
-|------|---------|--------|
-| AP (Config) | WiFi belum diset / gagal konek | Hotspot `ESP32-Config`, web server di `192.168.4.1` |
-| STA (Normal) | Berhasil konek WiFi | Mode normal, WiFi config tersimpan |
+| Mode | Condition | Function |
+|------|-----------|----------|
+| AP (Config) | No WiFi saved / connection failed | Hotspot `ESP32-Config`, web server at `192.168.4.1` |
+| STA (Normal) | WiFi connected | Normal mode, config persisted in NVS |
 
-Transisi: AP → user submit form → simpan NVS → restart → STA. STA gagal → balik AP.
+Transition: AP → user submits form → save to NVS → restart → STA. STA fails → back to AP.
 
-## Arsitektur
+## Architecture
 
 ```
 17-07-2026-WiFi-Manager/
-├── 17-07-2026-WiFi-Manager.ino   # setup/loop, state machine
-├── config.h                        # Pin, timeout, AP SSID, dll
-├── webserver.h                     # Web server, handler, halaman config
-└── storage.h                       # Baca/tulis NVS via Preferences
+├── ESPWiFiManager.h           # Single-header library
+├── 17-07-2026-WiFi-Manager.ino# Demo sketch
+└── examples/
+    └── ...                     # Usage examples
 ```
 
-## Komponen Detail
+The library is self-contained in `ESPWiFiManager.h`. No external dependencies beyond ESP32 Arduino core.
 
-### config.h
-- `AP_SSID` = `"ESP32-Config"`
-- `AP_TIMEOUT` = 300 detik (AP mati otomatis kalau gak ada interaksi)
-- Pin opsional: `BUTTON_PIN` untuk force AP mode
-
-### storage.h
-Pakai `Preferences.h` (built-in ESP32).
-- Namespace: `"wifi-config"`
-- Key: `"ssid"` (string), `"pass"` (string)
-- Fungsi: `loadConfig()`, `saveConfig(ssid, pass)`, `clearConfig()`
-
-### webserver.h
-Web server di port 80, aktif cuma di AP mode.
-
-Halaman config (HTML/CSS inline):
-- Scan WiFi → dropdown SSID
-- Input password
-- Tombol "Connect"
-- Submit POST ke `/connect` → simpan → restart
-
-Halaman status opsional di STA mode:
-- Nampilin IP yang didapat
-- Info koneksi
-
-### 17-07-2026-WiFi-Manager.ino (state machine)
+## State Machine
 
 ```
 setup():
   1. init Serial
-  2. loadConfig() dari NVS
-  3. if (ada SSID) → coba connect STA
-  4. if (gagal / gak ada SSID) → start AP + web server
-  
+  2. loadConfig() from NVS
+  3. if (SSID exists) → try connecting to STA
+  4. if (fail / no SSID) → start AP + web server
+
 loop():
   if (AP mode):
-    handleClient()
+    process DNS + HTTP
     if (timeout) → restart
   if (STA mode):
-    // idle — siap untuk fungsi tambahan
-  if (BUTTON_PIN ditekan > 3 detik):
-    clearConfig() → restart
+    idle — ready for user code
 ```
 
 ## Data Flow
 
 ```
-User connect HP ke WiFi ESP32-Config
+Phone connects to ESP32-Config WiFi
         ↓
-Captive portal / buka browser → 192.168.4.1
+Captive portal / browser → 192.168.4.1
         ↓
-Form dengan dropdown SSID + input password
+Form with SSID dropdown + password input
         ↓
 Submit POST /connect
         ↓
-Simpan ke NVS
+Save to NVS (Preferences)
         ↓
 Restart ESP32
         ↓
-STA mode — connect ke WiFi baru
+STA mode — connect to new WiFi
   ↙        ↘
-berhasil     gagal
+success     fail
   ↓           ↓
-normal      balik AP mode
+normal     back to AP mode
 ```
 
-## Edge Cases & Error Handling
+## Edge Cases
 
-- **Password salah** → STA gagal → balik AP, config lama dihapus
-- **ESP32 lupa config** → tombol reset (hold 3s) → clear NVS → AP mode
-- **AP gak ada interaksi** → AP mati setelah 5 menit, restart ulang
-- **SSID kosong / submit gak lengkap** → validasi di HTTP handler, tolak
+- **Wrong password** → STA fails → back to AP, old config cleared
+- **Config lost** → hold BOOT 3s → clear NVS → AP mode
+- **AP idle** → AP shuts down after 5 minutes, restart
+- **Empty SSID** → HTTP validation rejects
 
 ## Success Criteria
 
-- [ ] HP connect ke `ESP32-Config`, muncul halaman form
-- [ ] SSID ter-scan & tampil di dropdown
-- [ ] Submit SSID/PW → ESP32 restart → connect ke WiFi
-- [ ] Ganti WiFi lagi via AP mode kalau perlu
-- [ ] Tombol reset config
+- [ ] Phone connects to `ESP32-Config`, form page loads
+- [ ] WiFi scan populates SSID dropdown
+- [ ] Submit SSID/PW → ESP32 restarts → connects to WiFi
+- [ ] Changing WiFi via AP mode works
+- [ ] Reset button clears config

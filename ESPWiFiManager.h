@@ -26,8 +26,6 @@ public:
                 _mode = MODE_STA;
                 Serial.print("[WiFi] Connected! IP: ");
                 Serial.println(WiFi.localIP());
-                pinMode(2, OUTPUT);
-                digitalWrite(2, HIGH);
                 return;
             }
             Serial.println("[WiFi] Failed, starting AP mode");
